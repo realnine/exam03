@@ -3,9 +3,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define	FAIL	0
-#define SUCCESS	1
-
 typedef struct	s_zone
 {
 	int		width;
@@ -22,22 +19,19 @@ typedef struct	s_shape
 	char	text;
 }	t_shape;
 
-int	ft_strlen(char *str)
-{
-	int i = 0;
-	while (str[i])
-		i++;
-	return (i);
-}
-
 int	clear(FILE *file, char *data, char *msg)
 {
 	if (file)
 		fclose(file);
 	if (data)
 		free(data);
+	int i = 0;
 	if (msg)
-		write(1, msg, ft_strlen(msg));
+	{
+		while (msg[i])
+			i++;
+		write(1, msg, i);
+	}
 	return (1);
 }
 
@@ -49,13 +43,13 @@ char	*get_zone(FILE *file, t_zone *zone)
 
 	scan = fscanf(file, "%d %d %c\n", &zone->width, &zone->height, &zone->back);
 	if (scan != 3)
-		return (FAIL);
+		return (0);
 	if (!(zone->width > 0 && zone->width <= 300
 		&& zone->height > 0 && zone->height <= 300))
-		return (FAIL);
+		return (0);
 	data = (char *)calloc(zone->width * zone->height, sizeof(char));
 	if (!data)
-		return (FAIL);
+		return (0);
 	i = 0;
 	while (i < zone->width * zone->height)
 		data[i++] = zone->back;
@@ -109,17 +103,18 @@ int	draw_shapes(FILE *file, t_zone *zone, char *data)
 
 	while (1)
 	{
-		scan = fscanf(file, "%c %f %f %f %c\n", &sh.type, &sh.x, &sh.y, &sh.radius, &sh.text);
+		scan = fscanf(file, "%c %f %f %f %c\n", 
+						&sh.type, &sh.x, &sh.y, &sh.radius, &sh.text);
 		if (scan != 5 && scan != -1)
-			return (FAIL);
+			return (0);
 		if (scan == -1)
 			break ;
 		if (sh.radius <= 0.00000000 || (sh.type != 'c' && sh.type != 'C'))
-			return (FAIL);
+			return (0);
 		//printf("%c %f %f %f %c\n", sh.type, sh.x, sh.y, sh.radius, sh.text);
 		draw_shape(zone, &sh, data);
 	}
-	return (SUCCESS);
+	return (1);
 }
 
 void	print_data(t_zone *zone, char *data)

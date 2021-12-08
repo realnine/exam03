@@ -9,4 +9,4 @@ cat res2
 echo -----------diff-----------
 diff res1 res2
 echo -----------diff-----------
-
+rm res1 res2 my

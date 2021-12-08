@@ -19,23 +19,20 @@ typedef struct	s_shape
 	char	text;
 }	t_shape;
 
-int	ft_strlen(char *str)
-{
-	int i = 0;
-
-	while(str[i])
-		i++;
-	return (i);
-}
-
 int	clear(FILE *file, char *data, char *msg)
 {
 	if (file)
 		fclose(file);
 	if (data)
 		free(data);
+	
+	int i = 0;
 	if (msg)
-		write(1, msg, ft_strlen(msg));
+	{
+		while (msg[i])
+			i++;
+		write(1, msg, i);
+	}
 	return (1);
 }
 
@@ -45,32 +42,21 @@ int	check_zone(t_zone *zone)
 			&& zone->height > 0 && zone->height <= 300);
 }
 
-int	get_zone(FILE *file, t_zone *zone)
+char	*get_zone(FILE *file, t_zone *zone)
 {
 	int scan;
 
 	scan = fscanf(file, "%d %d %c\n", &zone->width, &zone->height, &zone->back);
 	if (scan != 3)
-	{
-		printf("scan error\n");
-		return 0;
-	}
+		return (0);
 	if (!check_zone(zone))
-	{
-		printf("check_zone error\n");
-		return 0;
-	}
-	return 1;
-}
+		return (0);
 
-char *paint_back(t_zone *zone)
-{
 	char *data;
-	int	len;
-
+	int len;
 	len = zone->width * zone->height;
-	if (!(data = calloc(len, sizeof(char))))
-		return (NULL);
+	if ( !(data = calloc(len + 1, sizeof(char))) )
+		return (0);
 	while (len--)
 		data[len] = zone->back;
 	return (data);
@@ -110,7 +96,7 @@ void	draw_shape(char *data, t_shape *sh, t_zone *zone)
 		x = 0;
 		while(x < zone->width)
 		{
-			ret = in_rectangle(x, y, sh);
+			ret = in_rectangle( (float)x, (float)y, sh);
 			//printf("x:%d y:%d ret:%d\n", x, y, ret);
 			if ( (sh->type == 'r' && ret == 2) || (sh->type == 'R' && ret) )
 			{
@@ -130,7 +116,8 @@ int	draw_shapes(FILE *file, char *data, t_zone *zone)
 
 	while (1)
 	{
-		scan = fscanf(file, "%c %f %f %f %f %c\n", &sh.type, &sh.x, &sh.y, &sh.width, &sh.height, &sh.text);
+		scan = fscanf(file, "%c %f %f %f %f %c\n", 
+						&sh.type, &sh.x, &sh.y, &sh.width, &sh.height, &sh.text);
 		if (scan != 6 && scan != -1)
 			return (0);
 		if (scan == -1)
@@ -160,21 +147,21 @@ int main(int argc, char **argv)
 	t_zone	zone;
 	FILE	*file;
 	char	*data;
+	char	msg1[] = "Error: argument\n";
+	char	msg2[] = "Error: Operation file corrupted\n";
+
 
 	if (argc != 2)
-		return (clear(0, 0, "Error: argument\n"));
+		return (clear(0, 0, msg1));
 	
-	if (!(file = fopen(argv[1], "r")))
-		return (clear(0,0, "Error: Operation file corrupted\n"));
+	if ( !(file = fopen(argv[1], "r")) )
+		return ( clear(0,0, msg2) );
 	
-	if (!get_zone(file, &zone))
-		return (clear(file, 0, "Error: Operation file corrupted\n"));
-	
-	if (!(data = paint_back(&zone)))
-		return (clear(file, 0, "Error: malloc failed :)\n"));
+	if ( !(data = get_zone(file, &zone)) )
+		return ( clear(file, 0, msg2) );
 	
 	if (!draw_shapes(file, data, &zone))	
-		return (clear(file, data, "Error: Operation file corrupted\n"));
+		return ( clear(file, data, msg2) );
 	
 	print_data(data, &zone);
 	clear(file, data, 0);
